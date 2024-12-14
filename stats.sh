@@ -3,4 +3,4 @@
 set -e
 
 echo "Line count:"
-find . -iname "main.*" | sort | xargs wc -l
+find . -iname "main*" | sort | xargs wc -l
