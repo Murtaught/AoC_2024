@@ -2,4 +2,4 @@
 .SILENT:
 
 run:
-	python3 main_p1.py
+	pypy3 main_p2.py
