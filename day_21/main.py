@@ -141,25 +141,63 @@ NUM_KP = Keypad("789\n456\n123\n#0A")
 DIR_KP = Keypad("#^A\n<v>")
 DIR_PERMS = list(map(list, permutations([Dir.N, Dir.E, Dir.S, Dir.W])))
 
-def find_solution(keypads: list[Keypad], buttons: str) -> str:
-    if not keypads:
-        return buttons
-
-    kp = keypads[0]
-    wraps = kp.all_wraps(buttons)
-    return min(
-        [find_solution(keypads[1:], nbs) for nbs in wraps],
-        key=len
-    )
-
-def complexity(input: str, buttons: str) -> int:
-    return int(input.replace('A', '')) * len(buttons)
-
-def solve_p1(input: str) -> int:
-    return complexity(input, find_solution([NUM_KP, DIR_KP, DIR_KP], input))
-
 with open("input") as file:
     inputs = [line.strip() for line in file]
 
-ans_p1 = sum(solve_p1(input) for input in inputs)
-print("ans (p1):", ans_p1)
+TRANSITIONS: dict[Char, dict[Char, list[str]]] = {
+    '^': {
+        'A': ['>'],
+        '<': ['v<'],
+        'v': ['v'],
+        '>': ['v>', '>v'],
+    },
+    'A': {
+        '^': ['<'],
+        '<': ['<v<', 'v<<'],
+        'v': ['<v', 'v<'],
+        '>': ['v'],
+    },
+    '<': {
+        '^': ['>^'],
+        'A': ['>>^', '>^>'],
+        'v': ['>'],
+        '>': ['>>'],
+    },
+    'v': {
+        '^': ['^'],
+        'A': ['^>', '>^'],
+        '<': ['<'],
+        '>': ['>'],
+    },
+    '>': {
+        '^': ['^<', '<^'],
+        'A': ['^'],
+        '<': ['<<'],
+        'v': ['<'],
+    },
+}
+
+@functools.cache
+def rec(s: str, depth: int) -> int:
+    if depth < 0:
+        return len(s)
+
+    p = 'A'
+    ret = 0
+    for c in list(s):
+        if c != p:
+            ret += min((rec(trans + 'A', depth - 1) for trans in TRANSITIONS[p][c]))
+        else:
+            ret += rec('A', depth - 1)
+        p = c
+
+    return ret
+
+def solve(input: str, depth: int) -> int:
+    wraps = NUM_KP.all_wraps(input)
+    length = min(rec(wrap, depth) for wrap in wraps)
+    number = int(input.replace('A', ''))
+    return number * length
+
+print("ans (p1):", sum(solve(input,  1) for input in inputs))
+print("ans (p2):", sum(solve(input, 24) for input in inputs))
